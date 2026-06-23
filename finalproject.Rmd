@@ -1,0 +1,564 @@
+---
+title: "FinalDataVizAD"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: show
+    self_contained: true
+date: "2026-06-20"
+---
+# Who were you miss girl? 
+Anastasiya Dmytryk Final Project Data Visualization
+## An analysis of pinterest useres 18-24 years old from 2025
+
+
+Pinterest is a social media where people share and save images, it collects a lot of data and for many years now have been the main place woman of all ages look for inspiration. Pinterest is also my dream company to work for. 
+Pinterest releases a lot of it's data publicly making it very convenient for analysis. In this project I would like to focus on a relatively very small demographic of woman aged 18-24 and go into depth about how was their style and taste formed over the year 2025. 
+For this analysis we will lok at the data set I collected and enriched with an llm for a final project in Data wrangeling as well as some statistics taken from the pinterest insight overview. 
+This is the pinterest provided age distribution graph 
+![Age distribution](/Users/nastya/Desktop/AgeDist.png)
+I wanted to rework it to make it more interesting visually 
+```{r}
+library(ggplot2)
+library(ggimage)
+
+age_data <- data.frame(
+  age_group = c("18-24", "25-34", "35-44", "45-49"),
+  percent = c(30, 32, 14, 5),
+  image = "~/Downloads/ChatGPT Image Jun 22, 2026, 09_33_36 PM.png"
+)
+
+# Colorblind-friendly Okabe-Ito palette
+age_colors <- c(
+  "18-24" = "#0072B2",  # blue
+  "25-34" = "#E69F00",  # orange
+  "35-44" = "#009E73",  # green
+  "45-49" = "#CC79A7"   # purple
+)
+
+ggplot(age_data,
+       aes(x = age_group,
+           y = 0.5,
+           image = image,
+           size = percent)) +
+
+  geom_image() +
+
+  scale_size_area(
+    max_size = 0.45,
+    guide = "none"
+  ) +
+
+  geom_text(
+    aes(
+      y = -0.15,
+      label = paste0(age_group, "\n", percent, "%"),
+      color = age_group
+    ),
+    size = 5,
+    fontface = "bold"
+  ) +
+
+  scale_color_manual(values = age_colors, guide = "none") +
+
+  coord_cartesian(ylim = c(-0.4, 1.1), clip = "off") +
+
+  labs(
+    title = "Who Uses Pinterest?",
+    subtitle = "Audience distribution by age group"
+  ) +
+
+  theme_void() +
+
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 18,
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      hjust = 0.5,
+      size = 12
+    ),
+    plot.margin = margin(20, 20, 40, 20)
+  )
+```
+
+```{r setup, include=FALSE}
+
+library(dplyr)
+library(tidyr)
+library(plotly)
+library(lubridate)
+df <- read.csv(
+  "~/Downloads/ai-trend-forecast/data/normalized_enriched_trends.csv",
+  stringsAsFactors = FALSE
+)
+
+female_18_24 <- df %>%
+  filter(age_group == "18-24", gender == "female") %>%
+  filter(!is.na(search_volume)) %>%
+  mutate(
+    week  = as.Date(week),
+    month = floor_date(week, unit = "month")
+  )
+
+
+
+```
+Lets start our analysis at a national level. 
+Pinterest has a breakdown of  of top percentage of useres in the united states. The data is portrayed as a vertical bar graph 
+![pinterest chart](/Users/nastya/Desktop/Location.png)
+After collecting the data from the pinterest website I decided to improve on that graphic by plotting it on an actual map of the united states. 
+Because I am only looking at a small demographic I have taken in the account how many users from pinterest are that age overall and then derived the percent for this useres in the town . 
+In this map the size of the dots shows the percent of woman age 18-24 pinterest users worldwide. 
+# usa map 
+
+
+```{r cars}
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+library(tibble)
+library(maps)
+
+us_map <- map_data("state")
+
+metro_data <- tribble(
+  ~metro, ~pct_audience, ~lat, ~lon,
+  "New York, NY", 0.055, 40.7128, -74.0060,
+  "Los Angeles, CA", 0.046, 34.0522, -118.2437,
+  "Chicago, IL", 0.025, 41.8781, -87.6298,
+  "Dallas, TX", 0.023, 32.7767, -96.7970,
+  "Washington, DC", 0.022, 38.9072, -77.0369,
+  "Atlanta, GA", 0.021, 33.7490, -84.3880,
+  "Philadelphia, PA", 0.020, 39.9526, -75.1652,
+  "Seattle, WA", 0.018, 47.6062, -122.3321,
+  "Phoenix, AZ", 0.017, 33.4484, -112.0740,
+  "San Francisco, CA", 0.016, 37.7749, -122.4194
+)
+
+ggplot() +
+  geom_polygon(
+    data = us_map,
+    aes(long, lat, group = group),
+    fill = "gray95",
+    color = "white",
+    linewidth = 0.2
+  ) +
+
+  geom_point(
+    data = metro_data,
+    aes(x = lon, y = lat, size = pct_audience),
+    color = "deeppink3",
+    alpha = 0.75
+  ) +
+
+  geom_text_repel(
+    data = metro_data,
+    aes(x = lon, y = lat, label = metro),
+    size = 3
+  ) +
+
+  scale_size_continuous(
+    range = c(4, 20),
+    labels = scales::percent_format(accuracy = 0.1),
+    name = "Estimated Share\nWomen 18–24"
+  ) +
+
+  coord_fixed(1.3) +
+
+  labs(
+    title = "Estimated Distribution of Female Pinterest Users Aged 18–24",
+    subtitle = "Top U.S. metro areas by audience share",
+    caption = "Values are estimated from Pinterest audience breakdowns."
+  ) +
+
+  theme_void(base_size = ) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 1),
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.position = "right"
+  )
+```
+#Maps speak louder
+Comparing to the bar graph made by pinterest we can now actualy vizualize our target population, and where they are spread around. 
+Expectedly New york has the biggest population as it is one of the international fashion capital, LA, Sanfrancisco and chicago also make sence comparing to their regular population. What is suprising is place like dallas, Atlanta, pheniox , washinghton , philadelphia and seatle being in the chart. As anoften pinterest scroller and social media girly I have not noticed a big fashion scene in this ares however I did notice Atlanta and Dallas evolving into their own american style fashion. 
+Well enought about this map, lets talk about our user. 
+If I had to flip a coin based on this data I would say our girl lives either in New York or LA. 
+
+Now what else can we say about her? 
+# Digging in deeper 
+Based on the data collected by pinterest we are able to know what searches vere most popular and in our case -> searches = trends, because what is talked about and what is looked up is a reflection of what is seen. The data set collected only focuses on biasly selected topics by me as a fashion girly, and since I am within this age range we can say I am an expert in the feild. So as an expert let's look at our 4 categories : 
+* Nails
+* Fashion
+* Beauty 
+* Makeup 
+
+```{r pressure, echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(plotly)
+library(lubridate)
+library(ggplot2)
+library(packcircles)
+normalized <- female_18_24 %>%
+  group_by(base_keyword) %>%
+  mutate(
+    norm_volume = (search_volume - min(search_volume, na.rm = TRUE)) /
+      (max(search_volume, na.rm = TRUE) - min(search_volume, na.rm = TRUE)) * 100
+  ) %>%
+  ungroup()
+monthly_keyword_avg <- normalized %>%
+  group_by(base_keyword, month) %>%
+  summarise(avg_norm_volume = mean(norm_volume, na.rm = TRUE), .groups = "drop") %>%
+  arrange(base_keyword, month)
+
+keyword_colors <- c(
+  "nails"   = "#534AB7",
+  "fashion" = "#D85A30",
+  "beauty"  = "#0F6E56",
+  "makeup"  = "#D4537E"
+)
+keyword_plots <- lapply(names(keyword_colors), function(kw) {
+  d <- monthly_keyword_avg %>% filter(base_keyword == kw)
+  plot_ly(
+    data = d,
+    x = ~month,
+    y = ~avg_norm_volume,
+    type = "scatter",
+    mode = "lines+markers",
+    line = list(color = keyword_colors[[kw]], width = 2),
+    marker = list(color = keyword_colors[[kw]], size = 7),
+    hovertemplate = paste0(
+      "Month: %{x|%b %Y}<br>Normalized score: %{y:.1f}<extra></extra>"
+    )
+  ) %>%
+    layout(
+      title = paste0(toupper(substr(kw, 1, 1)), substr(kw, 2, nchar(kw)), " - monthly normalized interest"),
+      xaxis = list(title = "Month"),
+      yaxis = list(title = "Normalized score (0-100)", range = c(0, 100))
+    )
+})
+names(keyword_plots) <- names(keyword_colors)
+keyword_grid <- subplot(
+  keyword_plots[["nails"]],
+  keyword_plots[["fashion"]],
+  keyword_plots[["beauty"]],
+  keyword_plots[["makeup"]],
+  nrows = 2, shareX = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.06
+) %>%
+  layout(title = "Monthly normalized interest by keyword - female, 18-24", showlegend = FALSE)
+
+keyword_grid
+```
+This graphs show us an interactive plot of how popular the normilized searches were per each group, it is statistically interesting and we can draw good information out of it like Nails had a dip in interest in the fall- winter season for 2025 *Check when donut nails became popular* Fashion peaked during the summer, with all the girls being out of school and enjoying the eurosummer trend and the brat summer. This peak can be accounted with being free to express their personality through fashion without having to wear school appropriate outfits, and coincidently when school starts back up fashion stops being suach a popular topic. Ah it is like winter herbernation for the fashion icons. 
+Beauty had a very small but stead downward slope, this one not sure why, there isn't ,major drops or major peaks. Last sweet one Makeup, makeup is a stead intearest among young grils, and I don't see it changing anytime soon, with how fake the social media is everygirl wears makeup everyday just to fit in with their favourite plastic doll theysee on the screen.
+
+# what specifically did you like each month
+Before we only looked at the top topics, but pinterest has sub topics for each one of them, Lets see what was the most popular topic and subtopic per every month. 
+```{r plot-timeline}
+trend_year_totals <- normalized %>%
+  group_by(base_keyword, Trend) %>%
+  summarise(trend_year_total = sum(search_volume, na.rm = TRUE), .groups = "drop")
+
+top_trend_per_month <- normalized %>%
+  left_join(trend_year_totals, by = c("base_keyword", "Trend")) %>%
+  arrange(month, desc(search_volume), desc(trend_year_total), Trend) %>%
+  group_by(month) %>%
+  slice(1) %>%
+  ungroup() %>%
+  arrange(month)
+top_trend_per_month <- top_trend_per_month %>%
+  mutate(
+    y_flat = 0,
+    point_color = unname(keyword_colors[base_keyword]),
+    hover_text = paste0(
+      "<b>", Trend, "</b><br>",
+      "Keyword: ", base_keyword, "<br>",
+      "Month: ", format(month, "%b %Y"), "<br>",
+      "Score: ", round(search_volume, 1), "<br>",
+      "Category: ", category
+    )
+  )
+
+timeline_plot <- plot_ly()
+
+# One dummy trace per keyword, just to populate a clean legend
+# (color = keyword), since the real markers are one combined trace.
+for (kw in names(keyword_colors)) {
+  timeline_plot <- timeline_plot %>%
+    add_trace(
+      x = NA, y = NA,
+      type = "scatter", mode = "markers",
+      marker = list(color = keyword_colors[[kw]], size = 10),
+      name = kw,
+      showlegend = TRUE
+    )
+}
+
+timeline_plot <- timeline_plot %>%
+  add_trace(
+    data = top_trend_per_month,
+    x = ~month,
+    y = ~y_flat,
+    type = "scatter",
+    mode = "lines+markers",
+    text = ~hover_text,
+    hoverinfo = "text",
+    line = list(color = "#B4B2A9", width = 2),
+    marker = list(color = ~point_color, size = 16, line = list(color = "white", width = 1.5)),
+    showlegend = FALSE
+  ) %>%
+  layout(
+    title = "Monthly top trend timeline - female, 18-24",
+    xaxis = list(title = "Month", showgrid = FALSE, zeroline = FALSE),
+    yaxis = list(
+      title = "",
+      range = c(-1, 1),
+      showticklabels = FALSE,
+      showgrid = FALSE,
+      zeroline = FALSE,
+      fixedrange = TRUE
+    ),
+    legend = list(orientation = "h", y = -0.2, title = list(text = "Keyword"))
+  )
+
+timeline_plot
+```
+
+
+
+To look at what caught the attention the most each month we take a look at the most popular search per month, this way we can make an asumtion that if it is the most popular search then probably our average girl looked it up too. Almond nails have been the domimating topic among them all. We are starting to paint put a picture, most likely our girl did have almond nails at one point that year. We also know she wanted to be pretty around the holidays because makeup was the top trend fr both december and januray. 
+Fun fact look at januray topic, it is called birthday makeup, from this I will make an assumption that the average girl was born around januray (what is the most popular month to be born at? ) 
+Fenty beauty was the hot stuff in november _> what has happened with fenty beauty in november
+ Also same as before when the school starts the interests shifts, we saw in montluy brealdwon that fashion has a downward slope after the school starts, however maekup is the most popular topic in august. Could it be because our girl can not express herself through clothes so she switches on to something more conservarive? 
+ 
+
+# Have you heard of seasonal depression? 
+We do it better, we do seasonal analysis. The data set that I collected is pretty messy because I used an LLM to enrich oit, so now we will clean it up. 
+To find the exact seasons we wont look at the ones the llm created we will derive them ourselves from the date the data was collected. For exampl december - feburary will be the winter season. 
+```{r clean-occasion}
+clean_occasion <- function(x) {
+  x <- tolower(x)
+  case_when(
+    is.na(x)                                                    ~ "unspecified",
+    grepl("none", x)                                             ~ "unspecified",
+    grepl("wedding", x)                                          ~ "wedding",
+    grepl("halloween", x)                                        ~ "holiday_seasonal",
+    grepl("holiday|festival|valentine", x)                       ~ "holiday_seasonal",
+    grepl("nightlife|party", x)                                  ~ "party_nightlife",
+    grepl("formal|special|event", x)                             ~ "formal_special",
+    grepl("casual|daily|everyday|leisure|street|personal", x)    ~ "casual_daily",
+    grepl("evening", x)                                          ~ "evening",
+    TRUE                                                          ~ "other"
+  )
+}
+clean_category <- function(x) {
+  x <- tolower(x)
+  case_when(
+    is.na(x)                                                              ~ "unspecified",
+    grepl("nail", x)                                                      ~ "nails",
+    grepl("makeup|cosmetic|skincare", x)                                  ~ "makeup_cosmetics",
+    grepl("beauty", x)                                                    ~ "beauty_general",
+    grepl("hair", x)                                                      ~ "hair",
+    grepl("cloth|apparel|dress|footwear|outerwear|formal_wear|garment|streetwear|outfit|fashion", x) ~ "fashion_apparel",
+    grepl("home|living|decor", x)                                        ~ "home_decor",
+    grepl("body_art|costume|toy", x)                                     ~ "body_art_costume",
+    grepl("subculture|philosophy|personal_development", x)              ~ "lifestyle_identity",
+    grepl("photography|television|media", x)                            ~ "media",
+    TRUE                                                                  ~ "other"
+  )
+}
+clean_theme <- function(x) {
+  x <- tolower(x)
+  case_when(
+    is.na(x)                                                                          ~ "unspecified",
+    grepl("retro|nostalg|throwback|vintage", x)                                       ~ "retro_nostalgic",
+    grepl("minimalis|clean,_functional", x)                                           ~ "minimalist",
+    grepl("glam|luxury|high_end|high_fashion|elegan|chic|classic|bold_&_vibrant|dramatic", x) ~ "glam_elegant",
+    grepl("edgy|dark|gothic|rebellious|alternative", x)                               ~ "edgy_dark",
+    grepl("feminine|romantic|dreamy|soft|pastel|whimsical|cute|childlike|playful|bright_and_cheerful", x) ~ "soft_feminine_playful",
+    grepl("fairy|fantasy|mythical|disney|comic", x)                                   ~ "fantasy_fairytale",
+    grepl("k_beauty|k_pop|korean|japanese|asian", x)                                  ~ "asian_pop_culture",
+    grepl("holiday|wedding|bridal|celebration|formal_event|formal|halloween", x)      ~ "celebration_event",
+    grepl("summer|spring|autumn|winter|warm|blossom|sun_and_fun|seasonal", x)         ~ "seasonal_nature",
+    grepl("nature|botanical|earth|animal|feline", x)                                  ~ "nature_inspired",
+    grepl("urban|streetwear|hip_hop|casual", x)                                       ~ "urban_streetwear",
+    grepl("skincare|self_care|wellness|routine|tips|how_to|tutorial|beauty_enhancement|beauty_and_personal_care|beauty_retail|inner_beauty|inspiration", x) ~ "routine_selfcare",
+    grepl("inclusive|unconventional|modesty|cultural|middle_eastern", x)              ~ "inclusive_cultural",
+    grepl("social_media|trend|travel|virtual|gaming|celebrity", x)                    ~ "trend_digital",
+    grepl("nail_art|colorful_nail|creative_nail|glittery|geometric|artificial_nail|natural_shades|beauty_&_nail_care|nails_colors", x) ~ "nail_art_style",
+    grepl("hair_care|hair_styling", x)                                                ~ "hair_care",
+    grepl("interior|home_decor|organization|organiz", x)                              ~ "home_lifestyle",
+    grepl("humorous|exclusive|unique|accessor|makeup_application|colorful_makeup|artistic_and_creative", x) ~ "misc_other",
+    x == "makeup"                                                                     ~ "misc_other",
+    TRUE                                                                               ~ "other"
+  )
+}
+by_season <- normalized %>%
+  mutate(
+    cal_month = month(week),
+    season = case_when(
+      cal_month %in% c(3, 4, 5)  ~ "spring",
+      cal_month %in% c(6, 7, 8)  ~ "summer",
+      cal_month %in% c(9, 10, 11) ~ "fall",
+      TRUE                        ~ "winter"
+    )
+  )
+by_season <- by_season %>%
+  mutate(
+    occasion_clean = clean_occasion(occasion),
+    category_clean = clean_category(category),
+    theme_clean = clean_theme(theme)
+  )
+```
+
+Lets see how our users interest were flowing through the different seasons in 2025 
+```{r}
+library(dplyr)
+library(plotly)
+library(scales)
+
+#--------------------------------------------------
+# 1. Select top themes
+#--------------------------------------------------
+
+top_themes <- by_season %>%
+  group_by(theme_clean) %>%
+  summarise(total = mean(norm_volume, na.rm = TRUE),
+            .groups = "drop") %>%
+  slice_max(total, n = 5) %>%
+  pull(theme_clean)
+
+theme_flow <- by_season %>%
+  filter(theme_clean %in% top_themes) %>%
+  group_by(season, theme_clean) %>%
+  summarise(
+    volume = mean(norm_volume, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+
+season_nodes <- c("Spring", "Summer", "Fall", "Winter")
+
+theme_nodes <- sort(unique(theme_flow$theme_clean))
+
+nodes <- data.frame(
+  label = c(season_nodes, theme_nodes),
+  stringsAsFactors = FALSE
+)
+
+
+season_colors <- c(
+  "Spring" = "#7CB342",
+  "Summer" = "#F9A825",
+  "Fall"   = "#A65E2E",
+  "Winter" = "#42A5F5"
+)
+
+# Generate automatic colors for themes
+theme_palette <- setNames(
+  hcl.colors(length(theme_nodes), "Dynamic"),
+  theme_nodes
+)
+
+node_colors <- c(
+  season_colors,
+  theme_palette
+)
+
+nodes$color <- node_colors[nodes$label]
+
+
+links <- theme_flow %>%
+  mutate(
+    season_label = tools::toTitleCase(season),
+
+    source = match(season_label, nodes$label) - 1,
+
+    target = match(theme_clean, nodes$label) - 1,
+
+    # edge color = theme color
+    color = alpha(theme_palette[theme_clean], 0.55),
+
+    hover_text = paste0(
+      "<b>", season_label, "</b>",
+      " → ",
+      "<b>", gsub("_", " ", theme_clean), "</b>",
+      "<br><br>",
+      "Average Interest: ",
+      round(volume, 1)
+    )
+  )
+
+fig <- plot_ly(
+  type = "sankey",
+  arrangement = "snap",
+
+  node = list(
+    label = nodes$label,
+    color = nodes$color,
+
+    pad = 45,        # spacing between nodes
+    thickness = 30,
+
+    line = list(
+      color = "black",
+      width = 0.5
+    ),
+
+    hovertemplate =
+      "<b>%{label}</b><extra></extra>"
+  ),
+
+  link = list(
+    source = links$source,
+    target = links$target,
+    value  = links$volume,
+
+    color = links$color,
+
+    customdata = links$hover_text,
+
+    hovertemplate =
+      "%{customdata}<extra></extra>"
+  )
+)
+
+fig %>%
+  layout(
+    title = list(
+      text = "Pinterest Theme Flow Across Seasons",
+      font = list(size = 22)
+    ),
+
+    font = list(size = 14),
+
+    hoverlabel = list(
+      bgcolor = "white",
+      font = list(size = 14)
+    )
+  )
+```
+
+
+This interactive graph shows the 5 most popular trends for our user
+From the chart we know that in the fall the girl was diving into her edgy and dark look, perfect for the halloween and all the spooky thematic typically assoisated with fall.
+In the summer time she was getting her nails done more often, all girls need new nails for summer vacation, same trend is seen in the winter with the holidays around the corrner the nails are always trending. Winter has also a same interest in edgy dark aestetic and minimalist. Spring is a nails art trend ones again with minimalistic aestetic following after.
+
+
+
+
+To finish our story lets try to visualize our pinterest user. 
+I gave the data for the user to chat gpt and asked it to create a mood baord for our typical user and how did she probably look like each season 
+
+
+![pinterest board for the user](/Users/nastya/Downloads/ChatGPT Image Jun 20, 2026, 07_47_33 PM.png)
+
+
+
+![How did she look like](/Users/nastya/Downloads/ChatGPT Image Jun 20, 2026, 07_50_22 PM.png)
