@@ -20,8 +20,8 @@ For this analysis, we will look at the dataset I collected and enriched with an 
 
 # Age Overview. 
 ## Making the original even better 
-Firstly Pinterest provides us with an age distribution overview tabel on their insights website.
-![Age distribution](/Users/nastya/Desktop/AgeDist.png)
+Firstly Pinterest provides us with an age distribution overview table on their insights website.
+![Age distribution](images/AgeDist.png)
 I wanted to rework it to make it more visually interesting
 ```{r, fig.alt="Female Pinterest users by age"}
 library(ggplot2)
@@ -116,7 +116,7 @@ female_18_24 <- df %>%
 # Lets get geographical.
 Pinterest provides a breakdown of the top percentage of users in the United States. The data is portrayed as a vertical bar graph.
 
-![pinterest chart](/Users/nastya/Desktop/Location.png)
+![pinterest chart](images/Location.png)
 # Put her on a map 
 After collecting the data from the Pinterest website, I decided to improve on that graphic by plotting it on an actual map of the United States.
 Because I'm only looking at a small demographic, I accounted for how many Pinterest users overall fall into that age group, then derived the percentage of 18-24 users specifically for each metro area.
@@ -241,23 +241,27 @@ keyword_plots <- lapply(names(keyword_colors), function(kw) {
     marker = list(color = keyword_colors[[kw]], size = 7),
     hovertemplate = paste0(
       "Month: %{x|%b %Y}<br>Normalized score: %{y:.1f}<extra></extra>"
-    )
+    ),
+    name = kw  # gives this trace a name, used below for annotation matching
   ) %>%
     layout(
-      title = paste0(toupper(substr(kw, 1, 1)), substr(kw, 2, nchar(kw)), " - monthly normalized interest"),
       xaxis = list(title = "Month"),
       yaxis = list(title = "Normalized score (0-100)", range = c(0, 100))
     )
 })
 names(keyword_plots) <- names(keyword_colors)
+
 keyword_grid <- subplot(
   keyword_plots[["nails"]],
   keyword_plots[["fashion"]],
   keyword_plots[["beauty"]],
   keyword_plots[["makeup"]],
-  nrows = 2, shareX = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.06
+  nrows = 2, shareX = FALSE, titleX = TRUE, titleY = TRUE, margin = 0.1
 ) %>%
-  layout(title = "Monthly normalized interest by keyword - female, 18-24", showlegend = FALSE)
+  layout(
+    title = "Monthly normalized interest by keyword - female, 18-24",
+    showlegend = TRUE
+  )
 
 keyword_grid
 ```
@@ -555,19 +559,10 @@ In summer, nail-related searches were more frequent — every girl needs fresh n
 
 Now let's build an image of the charachter 
 ```{r}
-## ============================================================
-## Visualization 4 — Interactive Persona: Tap a Body Part
-## "What does an 18\u201324 year old actually search for?"
-## Uses an emoji character \u2014 no file paths, no permissions issues.
-## ============================================================
 
 library(dplyr)
 library(htmltools)
 library(stringr)
-
-## ------------------------------------------------------------
-## 1. Compute top trend per base_keyword, age 18-24
-## ------------------------------------------------------------
 top_trends_18_24 <- df %>%
   filter(age_group == "18-24") %>%
   group_by(base_keyword, Trend) %>%
@@ -581,13 +576,6 @@ get_top <- function(keyword) {
   if (nrow(row) == 0) return("No data available")
   paste0(row$Trend[1], " (", round(row$total_volume[1]), " avg. searches)")
 }
-
-## ------------------------------------------------------------
-## 1b. "Hair" is not its own base_keyword \u2014 it lives inside
-##     "beauty". So: group by Trend WITHIN base_keyword == "beauty",
-##     sum search_volume, then pick the top-volume Trend whose
-##     text actually mentions hair.
-## ------------------------------------------------------------
 get_top_within_keyword <- function(parent_keyword, match_pattern) {
   rows <- df %>%
     filter(age_group == "18-24", base_keyword == parent_keyword) %>%
@@ -613,10 +601,6 @@ label_clothes <- paste0("<b>Top Outfit Trend:</b> ", top_outfit,
                          "<br><b>Top Fashion Trend:</b> ", top_fashion)
 label_nails   <- paste0("<b>Top Nails Trend:</b> ", top_nails)
 
-## ------------------------------------------------------------
-## 2. Build the widget: one big emoji + transparent hotspot
-##    divs roughly over hair / face / torso(clothes) / hands(nails)
-## ------------------------------------------------------------
 widget_html <- HTML(sprintf('
 <style>
   .persona-wrap {
@@ -722,11 +706,11 @@ widget_html
 To finish our story, let's try to visualize our Pinterest user.
 I gave the data for this user persona to ChatGPT and asked it to create a mood board representing our typical user, including how she probably looked each season.
 
-![Pinterest board for the user](/Users/nastya/Downloads/ChatGPT Image Jun 20, 2026, 07_47_33 PM.png)
+![Pinterest board for the user](images/ChatGPT Image Jun 20, 2026, 07_47_33 PM.png)
 
 
 
-![How did she look like](/Users/nastya/Downloads/ChatGPT Image Jun 20, 2026, 07_50_22 PM.png)
+![How did she look like](images/ChatGPT Image Jun 20, 2026, 07_50_22 PM.png)
 
 # So who is she? 
 ## conclusion drawn from the data analysis
@@ -734,3 +718,10 @@ I gave the data for this user persona to ChatGPT and asked it to create a mood b
 Putting all of this together, our typical 18-24 year old Pinterest girl is starting to look like a real person rather than just numbers. She most likely lives in New York or LA, because that's where the biggest share of this audience is concentrated. Her 2025 was running on a pretty predictable rhythm: she leans into fashion and self-expression all summer, pulls back once school starts, and leans on makeup instead when her outfit options get more restricted. Her nails are the most important part of her look with the searches peaking around summer vacation and again around the holidays she favors almond nails as a go-to all year. She probably has a January birthday, given how strongly "birthday makeup" trended that month, and she spent the back half of the year drifting toward an edgy, dark aesthetic in fall and winter before circling back to something softer and more minimalist by spring.
  
 What this project really shows, though, is less about just one girl and more about how trend data can tell a story if you let it. Search volume alone just tells you what's popular, but layering in the seasonal patterns, the LLM-enriched themes, and the geography turns a list of numbers into something closer to a year in someone's life. It also says something about how tightly trends are tied to context: school schedules, holidays, even what a single brand does in a single month (Fenty makeup) can shift what an entire demographic is searching for. 
+
+```{r}
+library(htmlwidgets)
+saveWidget(keyword_grid, "outputs/keyword_grid_interactive.html", selfcontained = TRUE)
+saveWidget(timeline_plot, "outputs/timeline_interactive.html", selfcontained = TRUE)
+saveWidget(fig, "outputs/sankey_interactive.html", selfcontained = TRUE)
+```
