@@ -14,13 +14,16 @@ Anastasiya Dmytryk Final Project Data Visualization
 ## An analysis of pinterest useres 18-24 years old from 2025
 
 
-Pinterest is a social media where people share and save images, it collects a lot of data and for many years now have been the main place woman of all ages look for inspiration. Pinterest is also my dream company to work for. 
-Pinterest releases a lot of it's data publicly making it very convenient for analysis. In this project I would like to focus on a relatively very small demographic of woman aged 18-24 and go into depth about how was their style and taste formed over the year 2025. 
-For this analysis we will lok at the data set I collected and enriched with an llm for a final project in Data wrangeling as well as some statistics taken from the pinterest insight overview. 
-This is the pinterest provided age distribution graph 
+Pinterest is a social media platform where people share and save images. It collects a large amount of data and is a primary place where useres of all ages look for inspiration. Pinterest is also my dream company to work for.
+Pinterest releases a lot of its data publicly, making it very convenient for analysis. In this project, I want to focus on a relatively small demographic women aged 18-24 and go over how their style and taste were shaped over the course of 2025.
+For this analysis, we will look at the dataset I collected and enriched with an LLM for a final project in Data Wrangling, as well as some statistics taken from Pinterest's audience insight overview.
+
+# Age Overview. 
+## Making the original even better 
+Firstly Pinterest provides us with an age distribution overview tabel on their insights website.
 ![Age distribution](/Users/nastya/Desktop/AgeDist.png)
-I wanted to rework it to make it more interesting visually 
-```{r}
+I wanted to rework it to make it more visually interesting
+```{r, fig.alt="Female Pinterest users by age"}
 library(ggplot2)
 library(ggimage)
 
@@ -30,7 +33,7 @@ age_data <- data.frame(
   image = "~/Downloads/ChatGPT Image Jun 22, 2026, 09_33_36 PM.png"
 )
 
-# Colorblind-friendly Okabe-Ito palette
+
 age_colors <- c(
   "18-24" = "#0072B2",  # blue
   "25-34" = "#E69F00",  # orange
@@ -86,6 +89,8 @@ ggplot(age_data,
   )
 ```
 
+From this visualization we see that users with the most accounts are age ranged 25-34, however the age group that this research is focused on is 18-24 which is only 2% behind. it is still more than 1/4th of all Pinterest User population and has specific interest to me a s a researcher since I can be an expert on the subject as I'm part of the group.
+
 ```{r setup, include=FALSE}
 
 library(dplyr)
@@ -108,16 +113,17 @@ female_18_24 <- df %>%
 
 
 ```
-Lets start our analysis at a national level. 
-Pinterest has a breakdown of  of top percentage of useres in the united states. The data is portrayed as a vertical bar graph 
+# Lets get geographical.
+Pinterest provides a breakdown of the top percentage of users in the United States. The data is portrayed as a vertical bar graph.
+
 ![pinterest chart](/Users/nastya/Desktop/Location.png)
-After collecting the data from the pinterest website I decided to improve on that graphic by plotting it on an actual map of the united states. 
-Because I am only looking at a small demographic I have taken in the account how many users from pinterest are that age overall and then derived the percent for this useres in the town . 
-In this map the size of the dots shows the percent of woman age 18-24 pinterest users worldwide. 
-# usa map 
+# Put her on a map 
+After collecting the data from the Pinterest website, I decided to improve on that graphic by plotting it on an actual map of the United States.
+Because I'm only looking at a small demographic, I accounted for how many Pinterest users overall fall into that age group, then derived the percentage of 18-24 users specifically for each metro area.
+In this map, the size of each dot shows the estimated share of female Pinterest users aged 18-24 in that U.S. metro area.
 
 
-```{r cars}
+```{r, fig.alt="Map of the United States with dot size showing estimated share of female Pinterest users aged 18-24 by metro area"}
 library(ggplot2)
 library(ggrepel)
 library(dplyr)
@@ -176,7 +182,7 @@ ggplot() +
     caption = "Values are estimated from Pinterest audience breakdowns."
   ) +
 
-  theme_void(base_size = ) +
+  theme_void( ) +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 1),
     plot.subtitle = element_text(hjust = 0.5),
@@ -184,20 +190,20 @@ ggplot() +
   )
 ```
 #Maps speak louder
-Comparing to the bar graph made by pinterest we can now actualy vizualize our target population, and where they are spread around. 
-Expectedly New york has the biggest population as it is one of the international fashion capital, LA, Sanfrancisco and chicago also make sence comparing to their regular population. What is suprising is place like dallas, Atlanta, pheniox , washinghton , philadelphia and seatle being in the chart. As anoften pinterest scroller and social media girly I have not noticed a big fashion scene in this ares however I did notice Atlanta and Dallas evolving into their own american style fashion. 
-Well enought about this map, lets talk about our user. 
-If I had to flip a coin based on this data I would say our girl lives either in New York or LA. 
+Compared to the bar graph made by Pinterest, we can now actually visualize our target population and see where it's spread across the country.
+As expected, New York has the largest share, since it's one of the international fashion capitals. LA, San Francisco, and Chicago also make sense relative to their overall population size. What's surprising is seeing cities like Dallas, Atlanta, Phoenix, Washington D.C., Philadelphia, and Seattle on this chart, these metros hold a meaningfully larger share of this audience than their general population size alone would predict, which suggests fashion and beauty-related Pinterest activity is concentrated there for reasons beyond just city size. As a frequent Pinterest scroller and social-media girly, I hadn't noticed a big fashion scene in these areas, though I have noticed Atlanta and Dallas developing their own distinct style.
+Enough about this map, let's talk about our user.
+If I had to flip a coin based on this data, I'd say our girl lives in either New York or LA, since those two metros account for the largest combined share in the dataset.
 
 Now what else can we say about her? 
 # Digging in deeper 
-Based on the data collected by pinterest we are able to know what searches vere most popular and in our case -> searches = trends, because what is talked about and what is looked up is a reflection of what is seen. The data set collected only focuses on biasly selected topics by me as a fashion girly, and since I am within this age range we can say I am an expert in the feild. So as an expert let's look at our 4 categories : 
+Based on the data collected from Pinterest, we can see which searches were most popular and in our case, searches = trends, because what people search for reflects what they're seeing and engaging with. This dataset only covers topics I selected myself as a fashion girly, and since I'm within this age range, I'd say that makes me something of an expert in the field. So, as a self proclaimed expert, let's look at our four categories:
 * Nails
 * Fashion
-* Beauty 
-* Makeup 
+* Beauty
+* Makeup
 
-```{r pressure, echo=FALSE}
+```{r pressure, echo=FALSE, fig.alt="Monthly normalized interests in 2025" }
 library(dplyr)
 library(tidyr)
 library(tibble)
@@ -255,8 +261,8 @@ keyword_grid <- subplot(
 
 keyword_grid
 ```
-This graphs show us an interactive plot of how popular the normilized searches were per each group, it is statistically interesting and we can draw good information out of it like Nails had a dip in interest in the fall- winter season for 2025 *Check when donut nails became popular* Fashion peaked during the summer, with all the girls being out of school and enjoying the eurosummer trend and the brat summer. This peak can be accounted with being free to express their personality through fashion without having to wear school appropriate outfits, and coincidently when school starts back up fashion stops being suach a popular topic. Ah it is like winter herbernation for the fashion icons. 
-Beauty had a very small but stead downward slope, this one not sure why, there isn't ,major drops or major peaks. Last sweet one Makeup, makeup is a stead intearest among young grils, and I don't see it changing anytime soon, with how fake the social media is everygirl wears makeup everyday just to fit in with their favourite plastic doll theysee on the screen.
+This graph shows an interactive view of how popular the normalized searches were for each category. It's statistically interesting, and we can draw some solid conclusions from it. Nails saw a dip in interest during the fall-winter season of 2025 which is around when donut nails were popular. Fashion peaked during the summer, with everyone out of school and leaning into the European-summer and "brat summer" trends. This peak likely reflects the freedom to express personal style without school dress codes, and unsurprisingly, once school starts back up, fashion interest drops off  kind of like winter hibernation for the fashion icons.
+Beauty had a small but steady downward slope across the year; there's no obvious single cause, since there aren't any major spikes or drops to point to. Last but not least, makeup: interest in makeup stayed consistently high among young women all year, and I don't expect that to change anytime soon. Between filters and influencer culture, makeup feels less optional and more like a daily expectation for a lot of girls trying to match an idealized look they see online
 
 # what specifically did you like each month
 Before we only looked at the top topics, but pinterest has sub topics for each one of them, Lets see what was the most popular topic and subtopic per every month. 
@@ -331,16 +337,14 @@ timeline_plot
 ```
 
 
-
-To look at what caught the attention the most each month we take a look at the most popular search per month, this way we can make an asumtion that if it is the most popular search then probably our average girl looked it up too. Almond nails have been the domimating topic among them all. We are starting to paint put a picture, most likely our girl did have almond nails at one point that year. We also know she wanted to be pretty around the holidays because makeup was the top trend fr both december and januray. 
-Fun fact look at januray topic, it is called birthday makeup, from this I will make an assumption that the average girl was born around januray (what is the most popular month to be born at? ) 
-Fenty beauty was the hot stuff in november _> what has happened with fenty beauty in november
- Also same as before when the school starts the interests shifts, we saw in montluy brealdwon that fashion has a downward slope after the school starts, however maekup is the most popular topic in august. Could it be because our girl can not express herself through clothes so she switches on to something more conservarive? 
- 
+To see what caught the most attention each month, we look at the single most popular search per month and based on that, we can reasonably assume that if it was the most popular search, our average girl probably looked it up too. Almond nails dominate as the top topic across the most months of any single trend. We're starting to build a picture here: it's likely our girl had almond nails at some point that year. We also know she wanted to look her best around the holidays, since makeup was the top trend in both December and January.
+Interesting peak: the top January trend is specifically "birthday makeup", but after some digging online We found out January is not that common to be a birthday month. 
+Fenty Beauty was the top trend in November, which can be explained by the launch of their new products Holiday Glow Collection.
+Also, same pattern as before: when school starts, interests shift. The monthly breakdown showed fashion trending downward once school starts, yet makeup is still the top topic in August. One theory: when she can't express herself as freely through clothing (school dress codes), she may shift that self-expression toward makeup instead.
 
 # Have you heard of seasonal depression? 
-We do it better, we do seasonal analysis. The data set that I collected is pretty messy because I used an LLM to enrich oit, so now we will clean it up. 
-To find the exact seasons we wont look at the ones the llm created we will derive them ourselves from the date the data was collected. For exampl december - feburary will be the winter season. 
+We do it better, we do seasonal analysis. The dataset I collected is pretty messy because I used an LLM to enrich it, so now we'll clean it up.
+To define the seasons accurately, we won't rely on the categories the LLM generated; instead, we'll derive them ourselves from the actual date each data point was collected. For example, December through February will be defined as winter.
 ```{r clean-occasion}
 clean_occasion <- function(x) {
   x <- tolower(x)
@@ -545,20 +549,188 @@ fig %>%
   )
 ```
 
+This interactive graph shows the 5 most popular themes for our user, broken down by season.
+From the chart, we can see that in fall, she was leaning into an edgy, dark aesthetic — fitting for Halloween and the spooky themes typically associated with that season.
+In summer, nail-related searches were more frequent — every girl needs fresh nails for summer vacation. The same pattern shows up in winter, when nails trend again as the holidays approach. Winter also shares fall's interest in edgy/dark aesthetics, alongside a minimalist theme. Spring brings nail art back into focus once more, with minimalist aesthetics close behind.
 
-This interactive graph shows the 5 most popular trends for our user
-From the chart we know that in the fall the girl was diving into her edgy and dark look, perfect for the halloween and all the spooky thematic typically assoisated with fall.
-In the summer time she was getting her nails done more often, all girls need new nails for summer vacation, same trend is seen in the winter with the holidays around the corrner the nails are always trending. Winter has also a same interest in edgy dark aestetic and minimalist. Spring is a nails art trend ones again with minimalistic aestetic following after.
+Now let's build an image of the charachter 
+```{r}
+## ============================================================
+## Visualization 4 — Interactive Persona: Tap a Body Part
+## "What does an 18\u201324 year old actually search for?"
+## Uses an emoji character \u2014 no file paths, no permissions issues.
+## ============================================================
 
+library(dplyr)
+library(htmltools)
+library(stringr)
 
+## ------------------------------------------------------------
+## 1. Compute top trend per base_keyword, age 18-24
+## ------------------------------------------------------------
+top_trends_18_24 <- df %>%
+  filter(age_group == "18-24") %>%
+  group_by(base_keyword, Trend) %>%
+  summarise(total_volume = sum(search_volume, na.rm = TRUE), .groups = "drop") %>%
+  group_by(base_keyword) %>%
+  slice_max(total_volume, n = 1, with_ties = FALSE) %>%
+  ungroup()
 
+get_top <- function(keyword) {
+  row <- top_trends_18_24 %>% filter(base_keyword == keyword)
+  if (nrow(row) == 0) return("No data available")
+  paste0(row$Trend[1], " (", round(row$total_volume[1]), " avg. searches)")
+}
 
-To finish our story lets try to visualize our pinterest user. 
-I gave the data for the user to chat gpt and asked it to create a mood baord for our typical user and how did she probably look like each season 
+## ------------------------------------------------------------
+## 1b. "Hair" is not its own base_keyword \u2014 it lives inside
+##     "beauty". So: group by Trend WITHIN base_keyword == "beauty",
+##     sum search_volume, then pick the top-volume Trend whose
+##     text actually mentions hair.
+## ------------------------------------------------------------
+get_top_within_keyword <- function(parent_keyword, match_pattern) {
+  rows <- df %>%
+    filter(age_group == "18-24", base_keyword == parent_keyword) %>%
+    filter(str_detect(str_to_lower(Trend), match_pattern)) %>%
+    group_by(Trend) %>%
+    summarise(total_volume = sum(search_volume, na.rm = TRUE), .groups = "drop") %>%
+    slice_max(total_volume, n = 1, with_ties = FALSE)
 
+  if (nrow(rows) == 0) return("No data available")
+  paste0(rows$Trend[1], " (", round(rows$total_volume[1]), " avg. searches)")
+}
 
-![pinterest board for the user](/Users/nastya/Downloads/ChatGPT Image Jun 20, 2026, 07_47_33 PM.png)
+top_hair    <- get_top_within_keyword("beauty", "hair")
+top_beauty  <- get_top("beauty")
+top_face    <- get_top("makeup")
+top_nails   <- get_top("nails")
+top_outfit  <- get_top("outfit")
+top_fashion <- get_top("fashion")
+
+label_hair    <- paste0("<b>Top Hair Trend:</b> ", top_hair)
+label_face    <- paste0("<b>Top Makeup Trend:</b> ", top_face)
+label_clothes <- paste0("<b>Top Outfit Trend:</b> ", top_outfit,
+                         "<br><b>Top Fashion Trend:</b> ", top_fashion)
+label_nails   <- paste0("<b>Top Nails Trend:</b> ", top_nails)
+
+## ------------------------------------------------------------
+## 2. Build the widget: one big emoji + transparent hotspot
+##    divs roughly over hair / face / torso(clothes) / hands(nails)
+## ------------------------------------------------------------
+widget_html <- HTML(sprintf('
+<style>
+  .persona-wrap {
+    position: relative;
+    width: 280px;
+    margin: 0 auto;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    text-align: center;
+  }
+  .persona-emoji {
+    font-size: 220px;
+    line-height: 1;
+    user-select: none;
+  }
+  .hotspot {
+    position: absolute;
+    cursor: pointer;
+    border: 2px dashed transparent;
+    border-radius: 8px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .hotspot:hover {
+    background: rgba(207, 56, 169, 0.18);
+    border-color: #CF38A9;
+  }
+  .hotspot.active {
+    background: rgba(207, 56, 169, 0.28);
+    border-color: #CF38A9;
+  }
+  #zone-hair    { top: 0%%;   left: 22%%; width: 56%%; height: 16%%; }
+  #zone-face    { top: 12%%;  left: 28%%; width: 44%%; height: 20%%; }
+  #zone-clothes { top: 25%%;  left: 18%%; width: 64%%; height: 38%%; }
+  #zone-nails-l { top: 40%%;  left: 10%%;  width: 16%%; height: 16%%; }
+  #zone-nails-r { top: 40%%;  left: 70%%; width: 16%%; height: 16%%; }
+
+  .persona-label {
+    margin-top: 10px;
+    min-height: 60px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #FFF4FA;
+    border: 1px solid #F2C9E6;
+    color: #6b2155;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: left;
+  }
+  .persona-label.placeholder {
+    color: #aa7a98;
+    font-style: italic;
+    text-align: center;
+  }
+  .persona-hint {
+    font-size: 12px;
+    color: #aa7a98;
+    margin-top: 4px;
+  }
+</style>
+
+<div class="persona-wrap">
+  <div class="persona-emoji">\U0001F9D8\U0001F3FC\u200D\u2640\uFE0F</div>
+  <div class="hotspot" id="zone-hair"   title="Hair"></div>
+  <div class="hotspot" id="zone-face"   title="Face"></div>
+  <div class="hotspot" id="zone-clothes" title="Outfit"></div>
+  <div class="hotspot" id="zone-nails-l" title="Nails"></div>
+  <div class="hotspot" id="zone-nails-r" title="Nails"></div>
+  <div class="persona-label placeholder" id="persona-output">
+    Click the hair, face, outfit, or hands to see the top trend for that category among 18\u201324 year olds.
+  </div>
+  <div class="persona-hint">Tip: hover to see which zone you are about to click</div>
+</div>
+
+<script>
+(function() {
+  var labels = {
+    "zone-hair":    %s,
+    "zone-face":    %s,
+    "zone-clothes": %s,
+    "zone-nails-l": %s,
+    "zone-nails-r": %s
+  };
+  var hotspots = document.querySelectorAll(".hotspot");
+  var output = document.getElementById("persona-output");
+
+  hotspots.forEach(function(el) {
+    el.addEventListener("click", function() {
+      hotspots.forEach(function(h) { h.classList.remove("active"); });
+      el.classList.add("active");
+      output.classList.remove("placeholder");
+      output.innerHTML = labels[el.id];
+    });
+  });
+})();
+</script>
+',
+   jsonlite::toJSON(label_hair), jsonlite::toJSON(label_face),
+   jsonlite::toJSON(label_clothes), jsonlite::toJSON(label_nails),
+   jsonlite::toJSON(label_nails)))
+
+widget_html
+```
+
+To finish our story, let's try to visualize our Pinterest user.
+I gave the data for this user persona to ChatGPT and asked it to create a mood board representing our typical user, including how she probably looked each season.
+
+![Pinterest board for the user](/Users/nastya/Downloads/ChatGPT Image Jun 20, 2026, 07_47_33 PM.png)
 
 
 
 ![How did she look like](/Users/nastya/Downloads/ChatGPT Image Jun 20, 2026, 07_50_22 PM.png)
+
+# So who is she? 
+## conclusion drawn from the data analysis
+
+Putting all of this together, our typical 18-24 year old Pinterest girl is starting to look like a real person rather than just numbers. She most likely lives in New York or LA, because that's where the biggest share of this audience is concentrated. Her 2025 was running on a pretty predictable rhythm: she leans into fashion and self-expression all summer, pulls back once school starts, and leans on makeup instead when her outfit options get more restricted. Her nails are the most important part of her look with the searches peaking around summer vacation and again around the holidays she favors almond nails as a go-to all year. She probably has a January birthday, given how strongly "birthday makeup" trended that month, and she spent the back half of the year drifting toward an edgy, dark aesthetic in fall and winter before circling back to something softer and more minimalist by spring.
+ 
+What this project really shows, though, is less about just one girl and more about how trend data can tell a story if you let it. Search volume alone just tells you what's popular, but layering in the seasonal patterns, the LLM-enriched themes, and the geography turns a list of numbers into something closer to a year in someone's life. It also says something about how tightly trends are tied to context: school schedules, holidays, even what a single brand does in a single month (Fenty makeup) can shift what an entire demographic is searching for. 
