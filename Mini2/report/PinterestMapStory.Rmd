@@ -1,0 +1,327 @@
+---
+title: "Know your audience"
+subtitle: "A closer insight on Pinterest womans useres"
+author: "Anastasiya Dmytryk"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: hide
+    self_contained: true
+    
+---
+
+```{r setup, include=FALSE}
+echo = FALSE
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 9)
+
+library(tidyverse)
+library(plotly)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(broom)
+library(scales)
+library(treemapify)
+
+palette_runway <- c(
+  "makeup"  = "#C8102E",
+  "beauty"  = "#E76F51",
+  "nails"   = "#F4A261",
+  "hair"    = "#2A9D8F",
+  "outfit"  = "#264653",
+  "fashion" = "#7B2D8B"
+)
+
+theme_runway <- function() {
+  theme_minimal(base_size = 13) +
+    theme(
+      plot.title = element_text(face = "bold", size = 16),
+      plot.subtitle = element_text(color = "grey40", size = 11),
+      panel.grid.minor = element_blank(),
+      legend.position = "bottom"
+    )
+}
+```
+
+# Introduction
+Today I will pretend to be Carrie Bradshaw writing my column on life in the city but instead we will take a *glimps* on pinterest trends for woman in the united states. 
+
+*In every project we do we want to know who are we doing it for*
+Is it just for us?  Do we have an audience? Is it for the state of art? 
+Pinterest allows many creative around the world share their project, art, and what inspires them. But that is not the only thing pinterest is about, it s also a huge market for influences and a way for people to promote their work and ear income. Because of that we want to quantify the data collected from the users and make meaningful stories about it. 
+This is the story of a few thousand woman around the world and what exactly do they like. 
+
+
+#Data
+We would not be able to do any of this without the data. For this story we will look at three data sets, one containing pinterest users by country collected in 2025, one containing a ration of woman to men users on pinterest, and one collected by us for this research of trend for female users age 18-49 that was enriched with the use of an llm to get more insight from raw pinterest data. 
+
+```{r load-data}
+echo = FALSE
+trends <- read_csv("../data/normalized_enriched_trends.csv") %>%
+  mutate(week = as.Date(week))
+
+pinterest_geo <- read_csv("../data/pinterest_users_by_country.csv")
+
+```
+
+# Data Cleaning & Preparation
+
+The data from the enriched dataset was collected and cleaned for a different project,but this data is still not perfect so we want to look at what data is missing and fill in the missing values 
+```{r clean}
+echo = FALSE
+trends_clean <- trends %>%filter(!is.na(search_volume)) %>%                
+  mutate(
+    relevance = replace_na(relevance, "unclassified"),
+    theme     = replace_na(theme, "unclassified"))
+
+
+trends %>%
+  summarise(
+    total_rows = n(),
+    missing_volume = sum(is.na(search_volume)),
+    missing_theme = sum(is.na(theme))
+  )
+```
+
+Almost half the records have missing volume probably because these are weeks where a specific term had zero search interest and was not recorded, because it is not a true missing
+data, so we filter it rather than remove. 
+
+---
+
+# Visualization 1 World Map
+We will begin our story very abstractly by looking at where are our users located. Geographical location can give us a great insight on what things will be trendy in the are depending on so many factors like: weather, politics, rate of young to old population, connectivity, influence etc.
+
+
+```{r viz2-spatial}
+echo = FALSE
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(plotly)
+library(showtext)
+font_add_google("Bebas Neue", "bebas")
+showtext_auto()   
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+centroids <- world %>%
+  st_centroid() %>%
+  st_coordinates() %>%
+  as_tibble() %>%
+  rename(longitude = X, latitude = Y) %>%
+  mutate(country = world$name)
+
+pinterest <- read_csv("../data/pinterest_users_by_country.csv")
+
+pinterest_geo <- pinterest %>%
+  left_join(centroids, by = c("Country" = "country")) %>%
+  mutate(
+    pinterest_users_millions = `Annual Active Users 2025` / 1e6,
+    user_tier = cut( pinterest_users_millions,breaks = c(0, 1, 5, 15, 30, Inf),labels = c("Under 1M", "1\u20135M", "5\u201315M", "15\u201330M", "30M+"),right = FALSE)) %>%
+  filter(!is.na(longitude), !is.na(pinterest_users_millions))
+
+p_map <- ggplot(world) +
+  geom_sf(fill = "white", color = "#F2E1E1", linewidth = 0.2) +
+  geom_point(
+    data = pinterest_geo,
+    aes(x = longitude, y = latitude, alpha = user_tier,
+        text = paste0(Country, ": ", round(pinterest_users_millions, 1), "M users")),
+    color = "#CF38A9", size = 4
+  ) + scale_alpha_discrete(name = "Pinterest users (millions)", range = c(0.2, 1)) +
+  theme_void() +theme(plot.title = element_text(family = "bebas",face   = "bold",size= 35, color = "#A9CF38"),plot.subtitle = element_text(color = "#A9CF38"),legend.position = "bottom", plot.background = element_rect(fill = "#38A9CF"))
+
+ggplotly(p_map, tooltip = "text") %>%
+  layout(
+    plot_bgcolor = "#38A9CF",paper_bgcolor = "#38A9CF",
+    legend = list(orientation = "h", y = -0.2, font = list(color = "#A9CF38")),
+    title = list(text = paste0("<b>Active Pinterest Useres around the world</b>",
+        "<br><sup>Pinterest users by country, 2025</sup>"),
+      font = list(color = "#A9CF38")),
+    margin = list(t = 80))
+```
+
+From this graph we can see United states to be the countries with the most users sitting at 96.9 billion. This works out great for us because all of our later analysis is based on the users in the united states. Interesting findings for me as a users were the amount of users in Brazil, it being the second largest population of users. This graph can be improved by directly looking at Europe since there is quite a bit of users and they do overlap but for this analysis we will only look at the united states.
+# Gender analysis 
+After researching the analysis of gender ration among Pinterest users I found an interesting pie chart at statista. 
+<a href="https://www.statista.com/statistics/248168/gender-distribution-of-pinterest-users/?srsltid=AfmBOop-w-DaSdNVBr4vUsJAe_1vWWMkVoqf2uP7aMq7NsawshGjE9hC" rel="nofollow"><img src="https://www.statista.com/graphic/1/248168/gender-distribution-of-pinterest-users.jpg" alt="Statistic: Distribution of Pinterest users worldwide as of October 2025, by gender | Statista" style="width: 100%; height: auto !important; max-width:1000px;-ms-interpolation-mode: bicubic;"/></a><br />Find more statistics at  <a href="https://www.statista.com" rel="nofollow">Statista</a>
+
+I belive we can visualize this better for the purpose of storytelling, so after scraping the data here is a new char to show that  pinterest is mostly used by female users
+```{r}
+echo = FALSE
+library(magick)
+library(grid)
+library(ggplot2)
+
+female_pct <- 70
+male_pct   <- 22
+unspecified<- 8
+
+pal <- c(Female = "#CF38A9", Male = "#38A9CF")
+recolor_figure <- function(path, hex_color, pct, max_pct = 100) 
+  {
+  img <- image_read(path)
+  img_colored <- image_colorize(img, opacity = 100, color = hex_color)
+  alpha_pct <- scales::rescale(pct, from = c(0, max_pct), to = c(35, 100))
+  img_final <- image_fx(img_colored, expression = paste0("a*", alpha_pct / 100),
+                         channel = "alpha")
+  img_final
+}
+
+woman_img <- recolor_figure("~/Documents/pinterestmapstory/images/w.png", pal["Female"], female_pct)
+man_img   <- recolor_figure("~/Documents/pinterestmapstory/images/m.png",   pal["Male"],   male_pct)
+
+woman_raster <- as.raster(woman_img)
+man_raster   <- as.raster(man_img)
+ggplot() +
+  annotation_custom(rasterGrob(woman_raster), xmin = -5, xmax = -1, ymin = 0, ymax = 8) +
+  annotation_custom(rasterGrob(man_raster),    xmin = 1,  xmax = 5,  ymin = 0, ymax = 8) +
+  annotate("text", x = -3, y = -0.6, label = paste0(female_pct, "%"),
+           size = 10, fontface = "bold", color = pal["Female"]) +
+  annotate("text", x = 3, y = -0.6, label = paste0(male_pct, "%"),
+           size = 10, fontface = "bold", color = pal["Male"]) +
+  annotate("text", x = -3, y = 8.5, label = "Female", size = 6, fontface = "bold", color = "grey20") +
+  annotate("text", x = 3, y = 8.5, label = "Male", size = 6, fontface = "bold", color = "grey20") +
+  coord_equal(xlim = c(-6, 6), ylim = c(-1.5, 9.5)) +
+  labs(
+    title = "Pinterest's Audience Skews Female",
+    subtitle = "Share of global Pinterest users by gender, October 2025",
+    caption = "Source: Statista / DataReportal (2025). Color intensity reflects share of users.\nRemaining ~8% identify as unspecified gender and are not shown."
+  ) +
+  theme_void(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5), plot.subtitle = element_text(color = "#53B002", hjust = 0.5, margin = margin(b = 10)),
+    plot.caption = element_text(color = "#53B002", size = 8, hjust = 0.5),plot.background = element_rect(fill = "white", color = NA)
+  )
+```
+
+
+As of October 2025 woman has made up a majority of users on pinterest in the united states. This is a great demographic statistics but we can go even deeper. 
+Just woman generalizes the population a lot, however different age groups go through different stages of life and have completely different interests. Lets look at the specific interest for each age group. 
+```{r}
+library(tidyverse)
+library(plotly)
+library(base64enc)
+
+persona_stats <- trends_clean %>%
+  group_by(age_group) %>%
+  summarise(
+    avg_volume = round(mean(search_volume, na.rm = TRUE), 1),
+    peak_volume = max(search_volume, na.rm = TRUE),
+    unique_trends = n_distinct(Trend),
+    top_trend = names(sort(table(Trend), decreasing = TRUE))[1],
+    top_theme = names(sort(table(theme), decreasing = TRUE))[1],
+    top_season = names(sort(table(season), decreasing = TRUE))[1],
+    .groups = "drop"
+  ) %>%
+  arrange(age_group) %>%
+  mutate(
+    x = row_number(),
+    y = 1,
+    hover_text = paste0(
+      "<b>Age Group:</b> ", age_group,
+      "<br><b>Top Trend:</b> ", top_trend,
+      "<br><b>Top Theme:</b> ", top_theme,
+      "<br><b>Top Season:</b> ", top_season,
+      "<br><b>Average Volume:</b> ", avg_volume,
+      "<br><b>Peak Volume:</b> ", peak_volume,
+      "<br><b>Unique Trends:</b> ", unique_trends
+    )
+  )
+
+img_files <- c(
+  "~/Documents/pinterestmapstory/images/woman1.png",
+  "~/Documents/pinterestmapstory/images/woman2.png",
+  "~/Documents/pinterestmapstory/images/woman3.png",
+  "~/Documents/pinterestmapstory/images/woman4.png",
+  "~/Documents/pinterestmapstory/images/woman5.png"
+)
+stopifnot(all(file.exists(img_files)))
+img_sources <- sapply(img_files, function(f) {
+  paste0(
+    "data:image/png;base64,",
+    base64encode(f)
+  )
+})
+
+p<-plot_ly(data = persona_stats,x = ~x,y = ~y,type = "scatter",mode = "markers",marker = list(size = 1, opacity = 0),text = ~hover_text,hoverinfo = "text",showlegend = FALSE)
+images_list <- list()
+for (i in seq_len(nrow(persona_stats))) 
+  {
+    images_list[[i]] <- list(
+    source = img_sources[i],
+    xref = "x",
+    yref = "y",
+    x = persona_stats$x[i],
+    y = 1,
+    sizex = 0.8,
+    sizey = 0.8,
+    xanchor = "center",
+    yanchor = "middle",
+    sizing = "contain",
+    opacity = 1,
+    layer = "above"
+  )
+}
+p<-p%>%layout(images = images_list, title = list( text = "<b>Meet the Users</b><br><sup>Interactive Consumer Personas by Age Group</sup>"
+  ),xaxis = list(tickvals = persona_stats$x,ticktext = persona_stats$age_group,showgrid = FALSE, zeroline = FALSE,title = ""),
+yaxis = list(visible = FALSE,range = c(0.4, 1.6)),plot_bgcolor = "white",paper_bgcolor = "white",margin = list(t = 80, b = 60, l = 20, r = 20)
+)
+p
+```
+
+Women aged 18–24 look at the most unique trends overall with a count of 184. As I'm part of this generation, I can tell you that micro trends and niche interests have been dominating my own searches. We have more opportunities than any generation had before us, which produces a lot of curiosity. Surprisingly, the top trend has been women's fashion in 1920. Personally, I can make an assumption that it is because our country is going through times harder than the Great Depression, and economic times have always reflected women's fashion, so old trends are coming back.
+
+The three other age groups, 25–34, 35–44, and 45–49, all show the top trend to be beauty and makeup. What is interesting is that average search volume also drops with age.
+
+I'm going to make two assumptions here:
+
+1. Younger generations have had more access to technology. Kids born after 2000, which is our first age group, have grown up with phones in their hands and have never relied on any other form of information to find what they need, so it makes sense for them to have the most search volume. From this, there is also another conclusion: people who were introduced to technology later have a higher learning curve, tend not to believe what is said online, and are also set in their ways about life already, so they show less interest in relying on Pinterest to search for their inspiration.
+
+2. Older women have less time, with more responsibilities, work, friends, and a better social life than anyone born after Y2K. There is simply no time or need for a constant search online.
+
+This graph is quite specific to the age groups, but let's look at the data that they all produced together for four trends picked out by me.
+
+
+```{r viz1-interactive}
+weekly_category <- trends_clean %>%
+  group_by(week, base_keyword) %>%summarise(avg_volume = mean(search_volume), .groups = "drop") 
+  ggplot( weekly_category,aes(x = week, y = avg_volume)) +
+  geom_line(aes(color = base_keyword),linewidth = 0.7,alpha = 0.5) +
+
+
+  geom_smooth(method = "lm",formula = y ~ x,color = "#472B1D",fill = "#D8FFBD", linewidth = 0.8,se = TRUE) +
+
+  facet_wrap(~ base_keyword,ncol = 2,scales = "free_y") +
+
+  scale_color_manual(values = palette_runway) +
+labs(title = "Modeled Weekly Search Trends by Category", subtitle = "Linear regression fit and 95% confidence interval for weekly search volume", x = NULL,y = "Average Search Volume") +theme_runway() + 
+    theme(legend.position = "none",strip.text = element_text(face = "bold",size = 12),
+    panel.spacing = unit(1, "lines")
+  )
+  
+```
+
+To add some statistics to our story we have added a linear regression plot on top of our raw search volumes.
+Fashion showed the strongest negative trend over time, while nails was the only category with a positive slope. This suggests that interest in most Pinterest categories  has declined throughout the observation period, potentially because of  *"clean girl aesthetic"* during 2025. 
+
+What we found out from here is fashion beauty and nails all had a dip around the holidays such as thanksgiving and Christmas and new years. This actually seems very off because will holidays? All woman want to look great for holidays, but maybe the classic plaid skirt and sparkly nails have been saved in everyone mind for a decade now so people don't look for anything new for this wonderful time. 
+
+However, makeup has spiked around Thanksgiving so maybe the 2016 trend has stopped having a choke hold on us. 
+This data is from a year ago and **a lot** have changed in this past year. The rise up of the "clean girl" aesthetic in 2025 , with minimal makeup, simple outfits, slick buns and donuts glaze nails. So the overall negative linear regression of all the trends (but nails) makes a lot of since because there wasn't any room for creativity or self expression among the woman fashion, everyone has just looked "clean", it will be interesting to see the impact of the 2026 year with the messy girl trend. 
+
+
+# Conclusion 
+
+At the beginning of this project I asked a simple question: who are we creating for? After looking at Pinterest users around the world, gender demographics, age groups, and trend behavior, I think we have a much better answer.
+
+Pinterest is a platform dominated by women proved by statistics, with the United States making up the largest part of users. However, what I found most interesting is that women are a big diverse umbrella of age groups. Different age groups look for different things, have different activity levels, and seem have completely different trends. Younger women appear to explore a much wider variety of interests, while older age groups tend to focus on a smaller set themes.
+
+The trend analysis also showed that fashion, beauty, and makeup are constantly changing. Even within a single year we can see trends rise and fall, with dips appearing where we least expect them, and entire aesthetics influence how people search online. What seems  to be outdated may suddenly return just like the return of 1920s fashion, which reminds me of a saying "fashion in cyclical"
+
+And just like fashion itself, the story is never really finished. There is more data to explore and learn about what are trends are to come next
+
