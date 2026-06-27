@@ -431,9 +431,7 @@ library(dplyr)
 library(plotly)
 library(scales)
 
-#--------------------------------------------------
-# 1. Select top themes
-#--------------------------------------------------
+
 
 top_themes <- by_season %>%
   group_by(theme_clean) %>%
