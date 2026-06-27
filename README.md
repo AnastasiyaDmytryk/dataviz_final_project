@@ -47,7 +47,9 @@ The **seasonal theme flow Sankey diagram** is my favorite. It's the chart that m
 ## Repo structure
 
 ```
-project_03/
+├── Mini1/
+├── Mini2/
+├── figures/
 ├── finalproject.Rmd
 ├── finalproject.html
 ├── finalproject.md
