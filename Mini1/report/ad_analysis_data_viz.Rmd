@@ -1,0 +1,248 @@
+---
+title: "Data Visualization - Mini-Project 1"
+author: "Anastasiya Dmytryk `admytryk9341@floridapoly.edu`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    code_folding: hide
+    self_contained: true
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+# Mini project topic: Starbucks coffee.
+
+Starbucks is one of the most well-known coffee chains — so much so that drinks invented by Starbucks are now served at other places. For example, the caramel macchiato was invented by Starbucks and is not an authentic Italian drink, as many people may assume. I am one of Starbucks's frequent customers, and I have noticed that the amount of sugar in my coffee often exceeds the amount of caffeine — though that is just a theory. With this mini project, I want to find out whether the amount of sugar exceeds the amount of caffeine in some drinks, what the top 5 healthiest drinks are (lowest sugar, highest protein, lowest fat), and what the worst drink for your health is (highest caffeine, sugar, carbs, and fat).
+## First we read in the data
+
+```{r}
+echo = FALSE
+library(tidyverse)
+library(readr)
+#the link provided was not working for me but i found the same data set online 
+link <- "https://raw.githubusercontent.com/reisanar/datasets/master/starbucks.csv"
+coffee <- read_csv(link)
+
+```
+
+## Second lets sort the drinks by the highest amount of caffeine
+
+```{r}
+echo = FALSE
+library(dplyr)
+#after exploring the data set I saw caffein is char so we need to make it a doubel 
+coffee$`Caffeine (mg)` <- as.double(coffee$`Caffeine (mg)`)
+#this lets me see what cofee has the most cafein, it is a brewed coffee 
+coffee <- coffee %>% arrange(desc(`Caffeine (mg)`))
+
+
+
+```
+
+### Now lets look at our first visualization
+
+## Visualization 1. What coffee has more sugar than caffeine ?
+
+```{r}
+echo = FALSE
+library(ggplot2)
+coffeeVsSugar<-coffee %>% drop_na(`Sugars (g)`, `Caffeine (mg)`) %>% filter(`Sugars (g)` > `Caffeine (mg)`) 
+
+#coffeeVsSugar
+top5<-head(coffeeVsSugar,5)
+#top5
+top5 %>% ggplot(aes(x = Calories , y =`Sugars (g)`,fill="Sugar" )) +
+  geom_col() + geom_text(aes(label = Beverage,),vjust=1.5,  size = 2,color="Black") +
+  labs(title = "Top 5 Drinks: Calories vs Sugar",
+       x = "Calories", y = "Sugars (g)") 
+
+#this label is confusing because it looks like it is the same drink, I will add another text layer to show that this drinks are prepared differently 
+
+#coffeeVsSugar
+top5<-head(coffeeVsSugar,5)
+#top5
+top5 %>% ggplot(aes(x = Calories , y =`Sugars (g)`,fill="Sugar" )) +
+  geom_col() + geom_text(aes(label = Beverage,),vjust=1.5,  size = 2,color="Black")+ geom_text(aes(label = Beverage_prep,),vjust=4.5,  size = 2,color="Black") +
+  labs(title = "Top 5 Drinks: Calories vs Sugar",
+       x = "Calories", y = "Sugars (g)") 
+
+#This is better but i want the graph to see the cafeein level too so we will add another layer 
+
+
+top5 %>% ggplot(aes(x = Calories , y =`Sugars (g)`,fill="Sugar" )) +
+  geom_col() + geom_text(aes(label = Beverage,),vjust=1.5,  size = 2,color="Black")+ 
+  geom_text(aes(label = Beverage_prep,),vjust=4.5,  size = 2,color="Black") +
+    geom_segment(aes(x = Calories - 5, xend = Calories + 5,  y = `Caffeine (mg)`, yend = `Caffeine (mg)`),color = "black", linetype = "solid", size = 1) +
+  labs(title = "Top 5 Drinks with more sugar than caffein by calorie level",
+       x = "Calories", y = "Sugars (g), Caffein level") 
+
+#After doing the last visualization I realized how to improve this one 
+top5<-mutate(top5, CafInG= `Caffeine (mg)` / 1000)
+#top5$CafInG
+
+# my caffein was not correct
+
+top5%>% mutate(drink_label = paste(Beverage, Beverage_prep, sep = "\n"))  %>% ggplot(aes(x = Calories , y =`Sugars (g)`,fill=drink_label )) +
+  geom_col()+ geom_segment(aes(x = Calories - 5, xend = Calories + 5,  y = CafInG, yend = CafInG ),color = "black", linetype = "solid", size = 1) +
+  
+  labs(title = "Top 5 Drinks with more sugar than caffein by calorie level",
+       x = "Calories", y = "Sugars (g)") +
+   theme_classic()
+
+
+```
+
+# Improved version.
+
+After making this graph, I learned two things I missed at first: 1) the caffeine was in the wrong unit — I was comparing milligrams to grams, which isn't correct, and 2) the graph looked awful after converting to the correct unit, because caffeine values are so much smaller than sugar values. So I wanted to attempt it again, and after going through the course slides, I decided to use an approach similar to the scatter plot with different-sized dots.
+
+# Visualization 1B.
+
+```{r}
+echo = FALSE
+library(ggrepel)
+my_colors <- c("#6B3A2A", "#C68642", "#3D2314", "#F5DEB3", "#E75480")
+
+
+top5<-top5%>% mutate(drink_label = paste(Beverage, Beverage_prep, sep = "\n"))
+
+ggplot(top5, aes( x = Calories, y = `Sugars (g)`,size = CafInG, color = drink_label )) +
+  geom_point( ) +
+  scale_color_manual(values = my_colors)+
+geom_label_repel( aes(label = drink_label), size = 1.6, fill="#FFFCF7", box.padding = 2,
+  point.padding = 2, color="#361E0C") +
+scale_size_continuous(name = "Caffeine (g)",range = c(3, 10) ) +
+labs(
+    title = "Sugar vs. Calories in Top 5 High-Sugar Starbucks Drinks",
+    subtitle = "Bubble size = caffeine content (g)",
+    x = "Calories",
+    y = "Sugars (g)",,size=2
+  ) +
+
+  theme_minimal() +
+  theme(plot.background  = element_rect(fill = "#FFFCF7", )) 
+```
+
+## Analysis 1
+
+I was not able to figure out how to add a second bar graph to compare caffeine and sugar levels, but I found a creative workaround. After sorting the drinks by highest sugar and lowest caffeine, I found that the most sugary drink is hot chocolate. It was strange because hot chocolate appears to be a single drink, but it occupies all five of the top spots, that's why I looked at the calories and different prep variations, and found that different milk choices affect the drink's calories even though the caffeine level stays the same. There are also completely non-caffeinated drinks with the same or higher sugar content, but I didn't focus on those, since I was specifically interested in coffee-based drinks.
+# Visualization 2A.
+
+## Top 5 drink that are the healthiest (has less amount of sugars, more protein, less fats)
+
+```{r}
+echo = FALSE
+noSugarNoFat<-coffee%>%filter(`Sugars (g)`== 0, `Total Fat (g)`== 0, )
+#noSugarNoFat
+healthy<-noSugarNoFat%>%arrange(desc(`Protein (g)`))
+top5Healthy<-head(healthy, 5)
+
+top5Healthy%>% ggplot(aes(x=Beverage_prep,y = Calories, fill= Beverage) )+ geom_col() +
+  labs(title = "Top 5 Healthiest drinks (high protein, no sugar no fat), by calories",
+       x = "Drink", y = "Calories")
+
+```
+
+# Improved version
+# Visualization 2B.
+
+```{r}
+echo = FALSE
+noSugarNoFat<-coffee%>%filter(`Sugars (g)`== 0, `Total Fat (g)`== 0, )
+#noSugarNoFat
+healthy<-noSugarNoFat%>%arrange(desc(`Protein (g)`))
+top5Healthy<-head(healthy, 5)
+
+top5Healthy%>%
+  mutate(Beverage_prep = reorder(Beverage_prep, `Protein (g)`)) %>% ggplot(aes(x=Beverage_prep,y = Calories, fill= Beverage) )+ 
+  geom_col(width = 0.3) +
+  scale_fill_manual(values = c( "Caffè Americano" = "#AD5A15","Espresso" = "#3D2F23"))+
+  geom_label_repel(aes(label = paste0(`Protein (g)`, "g protein")),size = 3,fill = "#FFFCF7",color = "#361E0C") +
+  coord_flip() +
+  labs(title = "Top 5 Healthiest drinks", subtitle="ranked by higest protein, no sugar no fat",
+       x = "Drink", y = "Calories")+ theme(panel.grid = element_blank(), panel.background  = element_rect(fill = "#FFFCF7"), plot.background = element_rect(fill = "#FFFCF7"),
+                                           plot.title = element_text(color = "#3D2F23", size =20, face="bold" ), 
+                                           plot.subtitle = element_text(color="#AD5A15", face="italic"))
+
+```
+
+## Analysis 2.
+
+The Caffè Americano turned out to be the healthiest drink, with the highest amount of protein, which is surprising. A classic Americano is typically made with a shot of espresso and hot water, so in theory there shouldn't be much protein in it. However, the Starbucks dataset says it contains 1 gram of protein but where does that protein come from? Coffee naturally contains a small amount of protein, but an 8-ounce shot would have less than 0.3 grams, so it's genuinely unclear how that much protein ends up in what is mostly water.
+The graph is colored by drink, and it reasonably shows the largest drink having the most calories. Espresso is about as healthy as a tall Americano, which makes sense, since an espresso at Starbucks contains two shots (a doppio), and a tall Americano contains two shots of espresso plus hot water. Interestingly, the Americano is also one of the most popular coffee drinks worldwide.
+After my first analysis, I also found that ggplot sorts categories alphabetically by default, so my ordering was off. To fix that, I added reorder() inside the plotting code so the drinks appear in the correct order by protein content.
+
+# Visualization 3A.
+
+## What is the worst drink for your health ( highest sugar level, carbs, fats, caffeine).
+
+```{r}
+echo = FALSE
+worst<-coffee%>%arrange( desc(`Sugars (g)`), desc(`Total Carbohydrates (g)`), desc(`Total Fat (g)`),desc(`Caffeine (mg)`),)%>% mutate(drink_label = paste(Beverage, Beverage_prep, sep = "\n")) 
+#I kept getting same drinks so to not have to deal with the things like before i decided to combine drink name and prep style to be one drink label and then use that on my x axis 
+
+#worst
+top5Worst<-head( worst,5)
+
+top5Worst %>% ggplot(aes(x=drink_label,y = Calories, fill= Beverage) )+ geom_col() +
+  labs(title = "Top 5 Worst drinks (highest sugar level,  carbs, fats, caffeine), by calories",
+       x = "Drink", y = "Calories")+
+    theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=5))
+
+
+```
+
+# Improved Version 
+# Visualization 3B.
+
+```{r}
+echo = FALSE
+worst<-coffee%>%arrange( desc(`Sugars (g)`), desc(`Total Carbohydrates (g)`), desc(`Total Fat (g)`),desc(`Caffeine (mg)`),)%>% mutate(drink_label = paste(Beverage, Beverage_prep, sep = "\n")) 
+#worst
+top5Worst<-head( worst,5)
+top5Worst%>%mutate(drink_label = reorder(drink_label, `Sugars (g)`)) %>%ggplot(aes(x=drink_label,y = Calories, color=drink_label) ) +
+
+geom_segment(aes(x = drink_label,xend = drink_label,y = 0,yend = Calories),color = "#361E0C",linewidth = 1) +
+geom_point(aes(size = `Sugars (g)`)) +
+  scale_color_manual(values = my_colors)+
+geom_label_repel(aes(label = paste0(`Sugars (g)`, "g sugar")),size = 2,fill = "#FFFCF7",color = "#361E0C") +
+  coord_cartesian(ylim = c(0, 600))+
+scale_size_continuous(name = "Sugar (g)",range = c(4, 12)) +
+labs(
+    title = "Top 5 Worst Starbucks Drinks",
+    subtitle = "Dot size indicates amount of sugar",
+    x = "Drink",
+    y = "Calories"
+  ) +
+  theme_minimal() +
+ theme(plot.background =element_rect(fill = "#FFFCF7"),axis.text.x = element_text(angle = 45, hjust = 1, size=5), 
+       plot.title = element_text(color = "#3D2F23", size =20, face="bold",margin = margin(b = 45) ), 
+                                           plot.subtitle = element_text(color="#AD5A15", face="italic" ))
+```
+
+## Analysis 3 .
+
+From this visualization, we found that frappuccinos are the worst drinks. The Java Chip Frappuccino has the highest amount of calories, but ranks 5th worst by sugar, carbs, and total fat. The top 4 worst drinks are also all frappuccinos and contain caramel. Even though the top 4 have fewer calories than the Java Chip, they contain more sugar, carbs, and total fat. These are the drinks I would advise anyone to avoid at Starbucks.
+# Report Questions.
+
+1. What were the original charts you planned to create for this assignment?
+
+The original charts I planned to create are Visualizations 1A, 2A, and 3A. They cover the drink with more sugar than caffeine, the healthiest drink, and the worst drink for your health. The original charts I made were lacking in color and weren't the strongest visualizations. After carefully reviewing the class material, I remade the graphics to be better by using more appropriate chart types, a cohesive color palette, and clearer legends and titles.
+2. What story could you tell with your plots?
+
+These plots could be used in a Starbucks dietary report — if the company ever decided to lean into a healthier lifestyle positioning, they could use Visualizations 1 and 3 to identify areas for improvement. The visualizations could also be used by dietitians who want to show clients that their typical order might not be as healthy as they think, using Visualizations 1 and 3, and then suggest a healthier alternative using Visualization 2.
+3. How did you apply the principles of data visualization and design for this assignment?
+
+Initial answer: I tried not to over complicate my graphs. I don't think my first graph was very good, but I tried multiple approaches, and I feel like I improved by the final version. I made sure all my graphs had labels and titles, and that color represented distinct details in the data rather than just aesthetics.
+
+New answer: I worked extensively with color, I picked a palette using an HTML color picker to reflect the theme of coffee and Starbucks. I also experimented with different sizes and chart types; bar graphs weren't the best fit for Visualizations 1 and 3, so I switched to a different chart type. I also removed the default theme and made the graphs more aesthetically pleasing. I added labels so readers can immediately understand what each data point means, making the graphs more useful overall.
+
+
+
+
+## Post analysis.
+
+My drink of choice is a shot of espresso with a splash of half-and-half and some simple syrup. It's not on the regular menu, but it turns out plain espresso is one of the healthiest drinks you can order, which makes me feel better about my order. My other usual drinks, like lattes, weren't in either the worst or the best category, which also makes me feel better about them. I was surprised to learn that Starbucks hot chocolate contains caffeine. When I started the "drinks with more sugar than caffeine" visualization, I expected the results to be mostly frappuccinos, so I was surprised not to see a single one show up.

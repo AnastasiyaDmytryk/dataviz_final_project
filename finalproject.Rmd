@@ -24,6 +24,7 @@ Firstly Pinterest provides us with an age distribution overview table on their i
 ![Age distribution](images/AgeDist.png)
 I wanted to rework it to make it more visually interesting
 ```{r, fig.alt="Female Pinterest users by age"}
+echo = FALSE
 library(ggplot2)
 library(ggimage)
 
@@ -92,7 +93,7 @@ ggplot(age_data,
 From this visualization we see that users with the most accounts are age ranged 25-34, however the age group that this research is focused on is 18-24 which is only 2% behind. it is still more than 1/4th of all Pinterest User population and has specific interest to me a s a researcher since I can be an expert on the subject as I'm part of the group.
 
 ```{r setup, include=FALSE}
-
+echo = FALSE
 library(dplyr)
 library(tidyr)
 library(plotly)
@@ -124,6 +125,7 @@ In this map, the size of each dot shows the estimated share of female Pinterest 
 
 
 ```{r, fig.alt="Map of the United States with dot size showing estimated share of female Pinterest users aged 18-24 by metro area"}
+echo = FALSE
 library(ggplot2)
 library(ggrepel)
 library(dplyr)
@@ -204,6 +206,7 @@ Based on the data collected from Pinterest, we can see which searches were most 
 * Makeup
 
 ```{r pressure, echo=FALSE, fig.alt="Monthly normalized interests in 2025" }
+echo = FALSE
 library(dplyr)
 library(tidyr)
 library(tibble)
@@ -270,7 +273,8 @@ Beauty had a small but steady downward slope across the year; there's no obvious
 
 # what specifically did you like each month
 Before we only looked at the top topics, but pinterest has sub topics for each one of them, Lets see what was the most popular topic and subtopic per every month. 
-```{r plot-timeline}
+```{r plot-timeline, fig.alt="A year time line of mos popular topics"}
+echo = FALSE
 trend_year_totals <- normalized %>%
   group_by(base_keyword, Trend) %>%
   summarise(trend_year_total = sum(search_volume, na.rm = TRUE), .groups = "drop")
@@ -350,6 +354,7 @@ Also, same pattern as before: when school starts, interests shift. The monthly b
 We do it better, we do seasonal analysis. The dataset I collected is pretty messy because I used an LLM to enrich it, so now we'll clean it up.
 To define the seasons accurately, we won't rely on the categories the LLM generated; instead, we'll derive them ourselves from the actual date each data point was collected. For example, December through February will be defined as winter.
 ```{r clean-occasion}
+echo = FALSE
 clean_occasion <- function(x) {
   x <- tolower(x)
   case_when(
@@ -426,7 +431,8 @@ by_season <- by_season %>%
 ```
 
 Lets see how our users interest were flowing through the different seasons in 2025 
-```{r}
+```{r, fig.alt="Flow of trends per season" }
+echo = FALSE
 library(dplyr)
 library(plotly)
 library(scales)
@@ -555,9 +561,9 @@ This interactive graph shows the 5 most popular themes for our user, broken down
 From the chart, we can see that in fall, she was leaning into an edgy, dark aesthetic — fitting for Halloween and the spooky themes typically associated with that season.
 In summer, nail-related searches were more frequent — every girl needs fresh nails for summer vacation. The same pattern shows up in winter, when nails trend again as the holidays approach. Winter also shares fall's interest in edgy/dark aesthetics, alongside a minimalist theme. Spring brings nail art back into focus once more, with minimalist aesthetics close behind.
 
-Now let's build an image of the charachter 
-```{r}
-
+Now let's build an image of the character 
+```{r, fig.alt="Characters Image based on the data"}
+echo = FALSE
 library(dplyr)
 library(htmltools)
 library(stringr)

@@ -11,8 +11,15 @@ output:
     self_contained: true
     
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
 
 ```{r setup, include=FALSE}
+cat("Working directory during knit:\n")
+print(getwd())
+cat("\nFiles visible from here:\n")
+print(list.files(recursive = TRUE))
 echo = FALSE
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 9)
 
@@ -94,7 +101,7 @@ data, so we filter it rather than remove.
 We will begin our story very abstractly by looking at where are our users located. Geographical location can give us a great insight on what things will be trendy in the are depending on so many factors like: weather, politics, rate of young to old population, connectivity, influence etc.
 
 
-```{r viz2-spatial}
+```{r viz2-spatial, fig.alt="World map of active pinterest users"}
 echo = FALSE
 library(dplyr)
 library(readr)
@@ -145,13 +152,13 @@ ggplotly(p_map, tooltip = "text") %>%
     margin = list(t = 80))
 ```
 
-From this graph we can see United states to be the countries with the most users sitting at 96.9 billion. This works out great for us because all of our later analysis is based on the users in the united states. Interesting findings for me as a users were the amount of users in Brazil, it being the second largest population of users. This graph can be improved by directly looking at Europe since there is quite a bit of users and they do overlap but for this analysis we will only look at the united states.
+From this graph we can see United states to be the countries with the most users sitting at 96.9 million. This works out great for us because all of our later analysis is based on the users in the united states. Interesting findings for me as a users were the amount of users in Brazil, it being the second largest population of users. This graph can be improved by directly looking at Europe since there is quite a bit of users and they do overlap but for this analysis we will only look at the united states.
 # Gender analysis 
 After researching the analysis of gender ration among Pinterest users I found an interesting pie chart at statista. 
 <a href="https://www.statista.com/statistics/248168/gender-distribution-of-pinterest-users/?srsltid=AfmBOop-w-DaSdNVBr4vUsJAe_1vWWMkVoqf2uP7aMq7NsawshGjE9hC" rel="nofollow"><img src="https://www.statista.com/graphic/1/248168/gender-distribution-of-pinterest-users.jpg" alt="Statistic: Distribution of Pinterest users worldwide as of October 2025, by gender | Statista" style="width: 100%; height: auto !important; max-width:1000px;-ms-interpolation-mode: bicubic;"/></a><br />Find more statistics at  <a href="https://www.statista.com" rel="nofollow">Statista</a>
 
-I belive we can visualize this better for the purpose of storytelling, so after scraping the data here is a new char to show that  pinterest is mostly used by female users
-```{r}
+I believe we can visualize this better for the purpose of storytelling, so after scraping the data here is a new char to show that  pinterest is mostly used by female users
+```{r, fig.alt="Gender breakdwown of pinterest useres"}
 echo = FALSE
 library(magick)
 library(grid)
@@ -172,9 +179,8 @@ recolor_figure <- function(path, hex_color, pct, max_pct = 100)
   img_final
 }
 
-woman_img <- recolor_figure("~/Documents/pinterestmapstory/images/w.png", pal["Female"], female_pct)
-man_img   <- recolor_figure("~/Documents/pinterestmapstory/images/m.png",   pal["Male"],   male_pct)
-
+woman_img <- recolor_figure("../images/w.png", pal["Female"], female_pct)
+man_img   <- recolor_figure("../images/m.png", pal["Male"], male_pct)
 woman_raster <- as.raster(woman_img)
 man_raster   <- as.raster(man_img)
 ggplot() +
@@ -202,7 +208,7 @@ ggplot() +
 
 As of October 2025 woman has made up a majority of users on pinterest in the united states. This is a great demographic statistics but we can go even deeper. 
 Just woman generalizes the population a lot, however different age groups go through different stages of life and have completely different interests. Lets look at the specific interest for each age group. 
-```{r}
+```{r, fig.alt="Per age group breakdown of general statistics"}
 library(tidyverse)
 library(plotly)
 library(base64enc)
@@ -234,11 +240,11 @@ persona_stats <- trends_clean %>%
   )
 
 img_files <- c(
-  "~/Documents/pinterestmapstory/images/woman1.png",
-  "~/Documents/pinterestmapstory/images/woman2.png",
-  "~/Documents/pinterestmapstory/images/woman3.png",
-  "~/Documents/pinterestmapstory/images/woman4.png",
-  "~/Documents/pinterestmapstory/images/woman5.png"
+  "../images/woman1.png",
+  "../images/woman2.png",
+  "../images/woman3.png",
+  "../images/woman4.png",
+  "../images/woman5.png"
 )
 stopifnot(all(file.exists(img_files)))
 img_sources <- sapply(img_files, function(f) {
@@ -287,7 +293,7 @@ I'm going to make two assumptions here:
 This graph is quite specific to the age groups, but let's look at the data that they all produced together for four trends picked out by me.
 
 
-```{r viz1-interactive}
+```{r viz1-interactive, fig.alt="weakly search trends by category"}
 weekly_category <- trends_clean %>%
   group_by(week, base_keyword) %>%summarise(avg_volume = mean(search_volume), .groups = "drop") 
   ggplot( weekly_category,aes(x = week, y = avg_volume)) +
@@ -305,15 +311,13 @@ labs(title = "Modeled Weekly Search Trends by Category", subtitle = "Linear regr
   )
   
 ```
+To add some rigor to this story, we fit a linear regression to the weekly search volume for each category. The fitted line and its 95% confidence interval are shown on top of the raw weekly averages.
 
-To add some statistics to our story we have added a linear regression plot on top of our raw search volumes.
-Fashion showed the strongest negative trend over time, while nails was the only category with a positive slope. This suggests that interest in most Pinterest categories  has declined throughout the observation period, potentially because of  *"clean girl aesthetic"* during 2025. 
+Fashion showed the steepest decline over the observation period (slope ≈ [insert value], R² = [insert value]), while nails was the only category with a positive slope (≈ [insert value]), suggesting search interest in nails grew modestly even as the other categories fell. The R² values for most categories are relatively low, which means the linear trend explains only part of the week-to-week variation — search volume is noisy, and a straight line is a simplification, not a full account of the pattern.
 
-What we found out from here is fashion beauty and nails all had a dip around the holidays such as thanksgiving and Christmas and new years. This actually seems very off because will holidays? All woman want to look great for holidays, but maybe the classic plaid skirt and sparkly nails have been saved in everyone mind for a decade now so people don't look for anything new for this wonderful time. 
-
-However, makeup has spiked around Thanksgiving so maybe the 2016 trend has stopped having a choke hold on us. 
-This data is from a year ago and **a lot** have changed in this past year. The rise up of the "clean girl" aesthetic in 2025 , with minimal makeup, simple outfits, slick buns and donuts glaze nails. So the overall negative linear regression of all the trends (but nails) makes a lot of since because there wasn't any room for creativity or self expression among the woman fashion, everyone has just looked "clean", it will be interesting to see the impact of the 2026 year with the messy girl trend. 
-
+Fashion, beauty, and nails all show a dip around the holiday period (Thanksgiving, Christmas, and New Year's). One possible explanation is that searches for established holiday   stay flat because people already know what they want and aren't searching for new ideas. This is a plausible hypothesis, not a conclusion the current data can confirm, and it would need more targeted analysis (for example, comparing search terms before and after the holidays) to test properly.
+Makeup, by contrast, spiked around Thanksgiving rather than dipping. Whether this reflects a shift away from older, established makeup trends, or something specific to that category's search behavior, isn't something this dataset can answer on its own, it's a question worth following up on rather than a settled finding.
+This dataset is about a year old, and search behavior may well have shifted since. The "clean girl" aesthetic that is associated with minimal makeup, simple outfits, slicked-back buns, and glazed nails became prominent in 2025, and it's possible that a broader move toward minimalism reduced demand for new ideas across most categories except nails, which remained a visible part of the aesthetic. That said, this is a hypothesis suggested by the timing, not something the regression itself demonstrates. Testing it properly would mean tracking specific aesthetic-related search terms over time, rather than inferring intent from a dip in aggregate volume. Whether a "messier" aesthetic gains traction in 2026 is an open question for future data, not something this analysis can predict.
 
 # Conclusion 
 
